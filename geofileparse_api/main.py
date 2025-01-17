@@ -4,12 +4,12 @@ import os
 
 sys.path.append(os.getcwd())
 from fastapi import FastAPI
-from es_api.routers import keyanexport_router  # 确保路径基于项目根
+from geofileparse_api.routers import keyanexport_router  # 确保路径基于项目根
 
 app = FastAPI()
 
 # 注册路由
-app.include_router(keyanexport_router.router, prefix="/api", tags=["keyanexport"])
+app.include_router(keyanexport_router.router, prefix="/esapi", tags=["keyanexport"])
 
 if __name__ == "__main__":
     import uvicorn

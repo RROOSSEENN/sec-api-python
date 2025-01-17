@@ -1,8 +1,8 @@
 # routers/research_router.py
 from fastapi import APIRouter, HTTPException
 import requests
-from es_api.service.elastic_service import ElasticService
-from es_api.utils.parse_data import parse_keyanexport_data
+from geofileparse_api.service.elastic_service import ElasticService
+from geofileparse_api.utils.parse_data import parse_keyanexport_data
 
 router = APIRouter()
 es_service = ElasticService(uri="http://192.168.154.26:9200")
@@ -53,7 +53,11 @@ async def ingest_research_data(projectNumber: str):
         es_response = es_service.write_bulk(data=parsed_data, index="keyanexport", mappings=mappings, settings=settings)
         print(f"Elasticsearch response: {es_response}")
 
-        return {"status": "success", "response": es_response}
+        # 构建查询 URI
+        query_uri = f"http://192.168.154.26:9200/keyanexport/_search?q=ProjectNumber:{projectNumber}"
+
+        return {"status": "success", "messages": {"datas": query_uri}}
     except Exception as e:
         print(f"Error occurred: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
