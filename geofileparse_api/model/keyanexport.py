@@ -17,6 +17,9 @@ class FileInfo(BaseModel):
     SysFileId: Optional[str]
     Filesize: Optional[float]
 
+    page_content: Optional[str]  # 文档内容
+    metadata: Optional[Dict[str, List[str]]]  # 文档元数据
+
 class ProjectModel(BaseModel):
     # ProjectInfo字段
     Tid: Optional[int]

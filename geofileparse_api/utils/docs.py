@@ -117,7 +117,6 @@ class GeoReportSplitter:
         neg_pattern = r'^(\d+[)）>#].*|\d+.*?(\d+层|\d+F|' + '|'.join(NEG_PATTERNS) + r')|\d+(\.\d+)?-\d+(\.\d+)?)'
         neg_keyword_pattern = r"\b(" + "|".join(map(re.escape, NEG_KEYWORD_PATTERNS)) + r")\b"
 
-
         is_heading = paragraph.style.name.startswith('Heading')
         is_not_toc = not re.match(toc_pattern, text)
         is_not_neg = not re.match(neg_pattern, text)
@@ -237,4 +236,5 @@ if __name__ == "__main__":
     # file_path = r"Y:\dataset\report\2022\2022-G-129\勘察报告【2022-G-129】强华股份集成电路核心装备关键新材料生产基地项目.docx"
     # file_path = r"Y:\dataset\report\2023\2023-G-030\勘察报告【2023-G-030-3】上海浦东国际机场四期扩建工程市政配套工程（不含二级排水、能源中心）项目（出租车蓄车场及员工停车库）.docx"
     documents =  GeoReportSplitter().split_document(file_path)
-    print(type(documents))
+    for doc in documents:
+        print(doc.page_content)

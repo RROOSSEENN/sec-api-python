@@ -6,14 +6,16 @@ import win32com.client  # 只在 Windows 环境使用
 
 
 class FileProcessor:
-    def __init__(self, api_url, file_id):
+    def __init__(self, api_url, file_id, project_number):
         """
         初始化文件处理类
         :param api_url: 文件下载的 API 接口地址
         :param file_id: 文件的唯一标识
+        :param project_number: 项目编号，用于生成保存目录
         """
         self.api_url = api_url
         self.file_id = file_id
+        self.project_number = project_number
 
     def extract_filename_from_headers(self, headers):
         """
@@ -23,11 +25,9 @@ class FileProcessor:
         """
         content_disposition = headers.get("Content-Disposition", "")
         if "filename*" in content_disposition:
-            # 提取并解码文件名
             filename_part = content_disposition.split("filename*=")[1]
             filename = urllib.parse.unquote(filename_part.split("''")[-1])  # 解码并获取文件名
         elif "filename=" in content_disposition:
-            # 如果没有 filename*，则使用 filename 部分
             filename = content_disposition.split("filename=")[1].strip('"')
         else:
             filename = "downloaded_file"
@@ -41,9 +41,24 @@ class FileProcessor:
         :param file_name: 保存的文件名
         :return: 保存的文件路径
         """
-        file_path = os.path.join(os.getcwd(), file_name)  # 保存到当前工作目录
+        # 根据 project_number 创建目录
+        target_dir = os.path.join(r"E:\R\routine\2025\1\DocxCache", str(self.project_number))
+        
+        if not os.path.exists(target_dir):
+            os.makedirs(target_dir)  # 如果目录不存在，创建目录
+        
+        # 构建文件完整路径
+        file_path = os.path.join(target_dir, file_name)  # 合并文件名
+        
+        # 如果文件已存在，则跳过保存
+        if os.path.exists(file_path):
+            print(f"文件 {file_name} 已经存在，跳过保存。")
+            return file_path  # 返回现有的文件路径
+        
+        # 如果文件不存在，则保存文件
         with open(file_path, "wb") as f:
             f.write(file_content)
+        
         return file_path
 
     def is_docx(self, file_path):
@@ -56,6 +71,16 @@ class FileProcessor:
         mime_type = mime.from_file(file_path)
         return mime_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
+    def is_pdf(self, file_path):
+        """
+        判断文件是否为 .pdf 格式
+        :param file_path: 文件路径
+        :return: 是否为 .pdf 格式 (True/False)
+        """
+        mime = magic.Magic(mime=True)
+        mime_type = mime.from_file(file_path)
+        return mime_type == "application/pdf"
+
     def convert_doc_to_docx(self, input_path):
         """
         将 .doc 文件转换为 .docx 文件
@@ -66,6 +91,10 @@ class FileProcessor:
             raise ValueError("输入文件不是 .doc 格式")
 
         output_path = input_path + "x"  # 转换后的文件名
+        if os.path.exists(output_path):
+            print(f"文件 {output_path} 已经存在，跳过转换。")
+            return output_path  # 如果转换后的文件已经存在，直接返回原路径
+        
         word = win32com.client.Dispatch("Word.Application")
         try:
             print(f"尝试打开文件: {input_path}")
@@ -87,13 +116,19 @@ class FileProcessor:
         # 保存文件到本地
         file_path = self.save_file(file_content, file_name)
 
-        # 判断文件类型
-        if not self.is_docx(file_path):
+        # 判断文件类型并进行相应处理
+        if file_path.lower().endswith(".doc"):
             print(f"{file_name} 不是 docx 文件，正在转换...")
             new_file_path = self.convert_doc_to_docx(file_path)
             os.remove(file_path)  # 删除原始 .doc 文件
             print(f"转换完成，新文件: {new_file_path}")
             return new_file_path  # 返回新的文件路径
+        elif file_path.lower().endswith(".pdf"):
+            print(f"{file_name} 是 PDF 文件，无需转换。")
+            return file_path
+        elif not self.is_docx(file_path):
+            print(f"{file_name} 不支持的文件类型，跳过处理。")
+            return None
         else:
             print(f"{file_name} 已经是 docx 文件，无需转换。")
             return file_path
@@ -119,15 +154,15 @@ class FileProcessor:
             print(f"文件下载失败，状态码: {response.status_code}")
             return None
 
-
 # 使用示例
 if __name__ == "__main__":
     # 配置 API 接口和文件 ID
     api_url = "http://192.168.2.188:6001/api/keyanexport/download"
-    file_id = "16636858969286"
+    file_id = "1872438665989459968"
+    project_number = "2023-KY-031"
 
     # 创建文件处理对象并开始处理
-    processor = FileProcessor(api_url, file_id)
+    processor = FileProcessor(api_url, file_id, project_number)
     final_file_path = processor.download_and_process_file()
 
     if final_file_path:

@@ -9,8 +9,8 @@ from geofileparse_api.routers import keyanexport_router  # 确保路径基于项
 app = FastAPI()
 
 # 注册路由
-app.include_router(keyanexport_router.router, prefix="/esapi", tags=["keyanexport"])
+app.include_router(keyanexport_router.router, prefix="/geofileparse_api", tags=["keyanexport"])
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("es_api.main:app", host="0.0.0.0", port=8080, reload=True)
+    uvicorn.run("geofileparse_api.main:app", host="0.0.0.0", port=8080, reload=True)
