@@ -151,7 +151,7 @@ class GeoReportSplitter:
         return table_contents
     
     def split_document(self, file_path, max_content_length=256):
-        """根据Word中的标题样式来分割文档"""
+        """根据Word中的标题样式来分割文档，并动态添加文件来源到metadata中"""
         doc = DocxDocument(file_path)
         documents = []
         current_headers = []
@@ -166,7 +166,10 @@ class GeoReportSplitter:
         def commit_content():
             nonlocal content
             if content:
-                documents.append(Document(page_content=content, metadata={'title': current_headers.copy()}))
+                metadata = {'source': file_path}  # 初始化metadata只包含source
+                if current_headers:
+                    metadata['title'] = current_headers.copy()  # 仅在标题非空时添加
+                documents.append(Document(page_content=content, metadata=metadata))
                 content = ""
             return content
 
@@ -175,7 +178,6 @@ class GeoReportSplitter:
                 para = docx.text.paragraph.Paragraph(element, doc)
                 _, header_level = self._get_title(para, body_font_size=body_font_size)
                 if header_level:
-                    # header_level = int(para.style.name.split()[1])
                     # 当遇到新标题时, 先提交当前正文
                     content = commit_content() 
                     if header_level > current_level:
@@ -195,20 +197,26 @@ class GeoReportSplitter:
 
             elif element.tag.endswith('tbl'):  # 如果是表格
                 table = docx.table.Table(element, doc)
-                # print(table)
                 table_title = prev_paragraph_text if prev_paragraph_text else None
-                # print(table_title)
                 # 将表格转换为 Markdown 格式
                 table_content = self._convert_table_to_markdown(table)
-                documents.append(Document(page_content=table_content, metadata={'title': current_headers.copy(), 'table_title': table_title}))
+                metadata = {'source': file_path}  # 初始化metadata只包含source
+                if current_headers:
+                    metadata['title'] = current_headers.copy()  # 仅在标题非空时添加
+                if table_title:
+                    metadata['table_title'] = table_title  # 仅在表格标题非空时添加
+                documents.append(Document(page_content=table_content, metadata=metadata))
 
         # 提交最后的内容
         if content:
-            documents.append(Document(page_content=content, metadata={'title': current_headers.copy()}))
+            metadata = {'source': file_path}  # 初始化metadata只包含source
+            if current_headers:
+                metadata['title'] = current_headers.copy()  # 仅在标题非空时添加
+            documents.append(Document(page_content=content, metadata=metadata))
 
-        # for idx, doc in enumerate(documents):
-        #     print(f"Document {idx + 1} Title:", doc.metadata.get('title'))
         return documents
+
+
 
     def split_text_from_docs(self, docs):
         documents = []
@@ -220,7 +228,7 @@ class GeoReportSplitter:
 
 if __name__ == "__main__":
     # file_path = r"/media/geodataset/report/2009/2009-G-001_11880/勘察报告【2009-G-001】“馨亭小区”A区（三期）商品住宅项目.docx"
-    file_path = r"E:\R\workplace\es-api-python\上海市科学技术委员会“扬帆计划”项目申请书-雷丹V5.docx"
+    file_path = r"E:\R\routine\2025\1\DocxCache\【4】《基于“云+端”的地铁结构设施安全风险防控平台关键技术研究与应用》-项目申报表.docx"
     # file_path = r"E:\R\routine\勘察报告【2022-G-132】普陀区桃浦科技智慧城W06-1401单元026-01地块项目.docx"
     # convert_docx_to_markdown(file_path)
     # file_path = r"/media/geodataset/report/2015/2015-G-031-13_22613/勘察报告【2015-G-031-13】滨海新区轨道交通B1线一期工程第一标段——国祥西道站岩土工程勘察详勘报告.docx"
@@ -237,4 +245,5 @@ if __name__ == "__main__":
     # file_path = r"Y:\dataset\report\2023\2023-G-030\勘察报告【2023-G-030-3】上海浦东国际机场四期扩建工程市政配套工程（不含二级排水、能源中心）项目（出租车蓄车场及员工停车库）.docx"
     documents =  GeoReportSplitter().split_document(file_path)
     for doc in documents:
-        print(doc.page_content)
+        print(type(doc))
+    print(type(documents))

@@ -1,6 +1,6 @@
 # app/models/project_model.py
-from pydantic import BaseModel
-from typing import List, Optional, Dict
+from pydantic import BaseModel, Field
+from typing import List, Optional, Dict, Any
 from datetime import datetime
 
 class FileInfo(BaseModel):
@@ -17,8 +17,8 @@ class FileInfo(BaseModel):
     SysFileId: Optional[str]
     Filesize: Optional[float]
 
-    page_content: Optional[str]  # 文档内容
-    metadata: Optional[Dict[str, List[str]]]  # 文档元数据
+    # 分割后的段落数据
+    segments: List[Dict[str, Any]] = Field(default_factory=list)
 
 class ProjectModel(BaseModel):
     # ProjectInfo字段

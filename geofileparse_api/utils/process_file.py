@@ -2,6 +2,7 @@ import os
 import requests
 import urllib.parse
 import magic
+import mimetypes
 import win32com.client  # 只在 Windows 环境使用
 
 
@@ -42,7 +43,7 @@ class FileProcessor:
         :return: 保存的文件路径
         """
         # 根据 project_number 创建目录
-        target_dir = os.path.join(r"E:\R\routine\2025\1\DocxCache", str(self.project_number))
+        target_dir = os.path.join(r"Y:\科研文件", str(self.project_number))
         
         if not os.path.exists(target_dir):
             os.makedirs(target_dir)  # 如果目录不存在，创建目录
@@ -67,8 +68,7 @@ class FileProcessor:
         :param file_path: 文件路径
         :return: 是否为 .docx 格式 (True/False)
         """
-        mime = magic.Magic(mime=True)
-        mime_type = mime.from_file(file_path)
+        mime_type, _ = mimetypes.guess_type(file_path)
         return mime_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
     def is_pdf(self, file_path):
@@ -77,8 +77,7 @@ class FileProcessor:
         :param file_path: 文件路径
         :return: 是否为 .pdf 格式 (True/False)
         """
-        mime = magic.Magic(mime=True)
-        mime_type = mime.from_file(file_path)
+        mime_type, _ = mimetypes.guess_type(file_path)
         return mime_type == "application/pdf"
 
     def convert_doc_to_docx(self, input_path):
